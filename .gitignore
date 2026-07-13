@@ -1,0 +1,33 @@
+# IDEs
+# Eclipse and STS3 workspace metadata
+.metadata/
+
+# Eclipse generated files
+.classpath
+.project
+.settings/
+
+# STS3
+.springBeans
+
+# vscode
+.vscode/
+
+# intellij
+.idea/
+
+# Java build output
+bin/
+target/
+out/
+
+# Server
+Servers/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
