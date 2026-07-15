@@ -31,3 +31,5 @@ Servers/
 .DS_Store
 Thumbs.db
 
+# React
+node_modules/
