@@ -1,16 +1,15 @@
-import logo from './logo.svg';
 import './App.css';
-import MyComponent from './component/MyComponent';
+import Mycomponent from './component/Mycomponent';
 
 function App() {
   return (
     <div className="App">
-      my web site<br/>
-      <MyComponent/>
-      <MyComponent/>
-      <MyComponent/>
-      <MyComponent/>
-      <MyComponent/>
+        my web site<br/>
+        <Mycomponent />
+        <Mycomponent />
+        <Mycomponent />
+        <Mycomponent />
+        <Mycomponent />
     </div>
   );
 }

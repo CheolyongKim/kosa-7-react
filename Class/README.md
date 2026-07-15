@@ -1,0 +1,1 @@
+node-modules 필요하면 exNN-app-XXX 안에 붙여넣어서 쓰기
