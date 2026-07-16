@@ -1,214 +1,113 @@
-import React, { useContext, useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { BoardContext } from '../context/BoardContext';
-import { Button, Card, Form, ListGroup } from 'react-bootstrap';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useBoard } from '../hooks/useBoard';
+import { formatDate } from '../utils/formatDate';
 
-const PostDetail = () => {
+export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { posts, dispatch } = useContext(BoardContext);
+  const { posts, status, removePost, increaseViews, addComment } = useBoard();
+  const post = posts.find((item) => item.id === Number(id));
+  const [comment, setComment] = useState({ author: '', text: '' });
+  const viewedId = useRef(null);
 
-  const [commentAuthor, setCommentAuthor] = useState('');
-  const [commentText, setCommentText] = useState('');
-
-  const postId = Number(id);
-  const post = posts.find((p) => p.id === postId);
-
-  // 조회수 증가 useEffect
+  // 상세 화면에 처음 들어왔을 때만 조회수를 올린다.
+  // useRef는 값이 바뀌어도 렌더링을 다시 일으키지 않아 중복 증가 방지에 적합하다.
   useEffect(() => {
-    if (post) {
-      dispatch({ type: 'INCREMENT_VIEW', payload: postId });
+    if (post && viewedId.current !== post.id) {
+      increaseViews(post.id);
+      viewedId.current = post.id;
     }
-  }, [postId, dispatch]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [post, increaseViews]);
 
-  // 게시글 삭제 핸들러 (useCallback 활용)
-  const handleDeletePost = useCallback(() => {
-    if (window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
-      dispatch({ type: 'DELETE_POST', payload: postId });
+  const submitComment = useCallback(
+    (event) => {
+      event.preventDefault();
+      if (!comment.author.trim() || !comment.text.trim()) return;
+
+      addComment(post.id, comment.author, comment.text);
+      setComment({ author: '', text: '' });
+    },
+    [post?.id, comment, addComment],
+  );
+
+  const remove = useCallback(async () => {
+    if (!window.confirm('이 게시글을 삭제할까요?')) return;
+
+    try {
+      await removePost(post.id);
       navigate('/');
+    } catch (error) {
+      alert(error.message);
     }
-  }, [postId, dispatch, navigate]);
+  }, [post?.id, removePost, navigate]);
 
-  // 댓글 등록 핸들러 (useCallback 활용)
-  const handleCommentSubmit = useCallback((e) => {
-    e.preventDefault();
-    if (!commentAuthor.trim() || !commentText.trim()) {
-      alert('작성자와 댓글 내용을 입력해주세요.');
-      return;
-    }
-
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    const newComment = {
-      id: Date.now(),
-      author: commentAuthor,
-      text: commentText,
-      createdAt: formattedDate,
-    };
-
-    dispatch({
-      type: 'ADD_COMMENT',
-      payload: { postId, comment: newComment },
-    });
-
-    setCommentAuthor('');
-    setCommentText('');
-  }, [postId, commentAuthor, commentText, dispatch]);
-
-  // 댓글 삭제 핸들러 (useCallback 활용)
-  const handleCommentDelete = useCallback((commentId) => {
-    if (window.confirm('댓글을 삭제하시겠습니까?')) {
-      dispatch({
-        type: 'DELETE_COMMENT',
-        payload: { postId, commentId },
-      });
-    }
-  }, [postId, dispatch]);
+  if (status === 'loading') {
+    return <section className="panel status">게시글을 확인하는 중입니다.</section>;
+  }
 
   if (!post) {
     return (
-      <div className="text-center py-5 text-secondary glass-card animate-fade-in">
-        <h4 className="mb-3">존재하지 않거나 삭제된 게시글입니다.</h4>
-        <Link to="/">
-          <Button className="btn-gradient border-0 px-4 py-2 rounded-pill fw-bold">
-            목록으로 돌아가기
-          </Button>
-        </Link>
-      </div>
+      <section className="panel status">
+        <p>게시글을 찾을 수 없습니다.</p>
+        <Link to="/">목록으로</Link>
+      </section>
     );
   }
 
   return (
-    <div className="glass-card p-4 rounded-4 shadow-lg mb-5 animate-fade-in">
-      {/* 상단 액션 바 */}
-      <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary-subtle">
-        <Button 
-          variant="outline-light" 
-          onClick={() => navigate('/')} 
-          className="rounded-pill px-3 py-1.5 fs-7 d-flex align-items-center gap-1"
-        >
-          ⬅ 목록으로
-        </Button>
-        <div className="d-flex gap-2">
-          <Link to={`/edit/${post.id}`}>
-            <Button variant="outline-info" className="rounded-pill px-3 py-1.5 fs-7 fw-semibold">
-              수정
-            </Button>
-          </Link>
-          <Button 
-            variant="outline-danger" 
-            onClick={handleDeletePost}
-            className="rounded-pill px-3 py-1.5 fs-7 fw-semibold"
-          >
-            삭제
-          </Button>
-        </div>
+    <article className="panel detail">
+      <div className="detail-actions">
+        <Link to="/">← 목록</Link>
+        <span>
+          <Link to={`/edit/${post.id}`}>수정</Link>
+          <button className="text-button danger" onClick={remove}>삭제</button>
+        </span>
       </div>
 
-      {/* 본문 영역 */}
-      <Card className="bg-transparent border-0 text-light mb-5">
-        <Card.Body className="p-0">
-          <div className="mb-4">
-            <h1 className="fw-extrabold text-gradient-indigo-cyan mb-3">{post.title}</h1>
-            <div className="d-flex flex-wrap align-items-center gap-3 text-secondary fs-7 bg-dark-subtle p-3 rounded-3">
-              <div>
-                <span className="fw-bold text-light-emphasis">작성자:</span> {post.author}
-              </div>
-              <div className="vr bg-secondary d-none d-sm-block"></div>
-              <div>
-                <span className="fw-bold text-light-emphasis">등록일:</span> {post.createdAt}
-              </div>
-              <div className="vr bg-secondary d-none d-sm-block"></div>
-              <div>
-                <span className="fw-bold text-light-emphasis">조회수:</span> {post.views}
-              </div>
-            </div>
-          </div>
-
-          <div 
-            className="post-content-area p-4 rounded-4 bg-dark-subtle text-light fs-5 mb-4 border border-secondary-subtle"
-            style={{ minHeight: '200px', whiteSpace: 'pre-wrap', lineHeight: '1.7' }}
-          >
-            {post.content}
-          </div>
-        </Card.Body>
-      </Card>
-
-      {/* 댓글 섹션 */}
-      <div className="comments-section border-top border-secondary-subtle pt-4">
-        <h4 className="fw-bold text-light mb-4 d-flex align-items-center gap-2">
-          💬 댓글 <span className="text-info">{(post.comments || []).length}</span>
-        </h4>
-
-        {/* 댓글 리스트 */}
-        <ListGroup className="mb-4 bg-transparent border-0 gap-2">
-          {(post.comments || []).length > 0 ? (
-            (post.comments || []).map((comment) => (
-              <ListGroup.Item 
-                key={comment.id} 
-                className="bg-dark-subtle text-light border border-secondary-subtle rounded-3 p-3 d-flex justify-content-between align-items-start comment-item-animate"
-              >
-                <div className="flex-grow-1">
-                  <div className="d-flex align-items-center gap-2 mb-2">
-                    <span className="fw-bold text-info">{comment.author}</span>
-                    <small className="text-muted fs-8">{comment.createdAt}</small>
-                  </div>
-                  <p className="mb-0 text-light-emphasis fs-6">{comment.text}</p>
-                </div>
-                <Button 
-                  variant="link" 
-                  onClick={() => handleCommentDelete(comment.id)} 
-                  className="text-danger p-0 border-0 text-decoration-none"
-                  style={{ fontSize: '0.85rem' }}
-                >
-                  삭제
-                </Button>
-              </ListGroup.Item>
-            ))
-          ) : (
-            <div className="text-center py-4 text-secondary bg-dark-subtle rounded-3 border border-secondary-subtle">
-              등록된 댓글이 없습니다. 첫 댓글을 남겨보세요!
-            </div>
-          )}
-        </ListGroup>
-
-        {/* 댓글 입력 폼 */}
-        <Form onSubmit={handleCommentSubmit} className="bg-dark-subtle p-3 rounded-4 border border-secondary-subtle">
-          <div className="row g-2 mb-3">
-            <div className="col-sm-4">
-              <Form.Control
-                type="text"
-                placeholder="작성자 이름"
-                value={commentAuthor}
-                onChange={(e) => setCommentAuthor(e.target.value)}
-                className="bg-black-subtle border-secondary text-light rounded-3"
-                required
-              />
-            </div>
-          </div>
-          <div className="d-flex gap-2">
-            <Form.Control
-              as="textarea"
-              rows={2}
-              placeholder="따뜻한 댓글을 남겨주세요..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="bg-black-subtle border-secondary text-light rounded-3"
-              style={{ resize: 'none' }}
-              required
-            />
-            <Button 
-              type="submit" 
-              className="btn-gradient border-0 px-4 fw-bold rounded-3 text-nowrap d-flex align-items-center justify-content-center"
-            >
-              등록
-            </Button>
-          </div>
-        </Form>
+      <p className="eyebrow">POST</p>
+      <h1>{post.title}</h1>
+      <div className="post-meta">
+        <span>{post.author}</span>
+        <span>{formatDate(post.createdAt)}</span>
+        <span>조회 {post.views}</span>
       </div>
-    </div>
+      <div className="content">{post.content}</div>
+
+      <section className="comments">
+        <h2>댓글 {post.comments.length}</h2>
+
+        {post.comments.length > 0 && (
+          <ul>
+            {post.comments.map((item) => (
+              <li key={item.id}>
+                <strong>{item.author}</strong>
+                <span>{formatDate(item.createdAt)}</span>
+                <p>{item.text}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <form onSubmit={submitComment}>
+          <input
+            value={comment.author}
+            onChange={(event) =>
+              setComment((current) => ({ ...current, author: event.target.value }))
+            }
+            placeholder="이름"
+          />
+          <textarea
+            value={comment.text}
+            onChange={(event) =>
+              setComment((current) => ({ ...current, text: event.target.value }))
+            }
+            placeholder="댓글을 남겨 주세요"
+            rows="3"
+          />
+          <button>댓글 등록</button>
+        </form>
+      </section>
+    </article>
   );
-};
-
-export default PostDetail;
+}

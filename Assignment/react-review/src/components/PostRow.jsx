@@ -1,40 +1,22 @@
-import React from 'react';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { Badge } from 'react-bootstrap';
+import { formatDate } from '../utils/formatDate';
 
-// React.memo를 활용한 최적화: 게시글 리스트 항목 컴포넌트
-const PostRow = React.memo(({ post, index }) => {
+// memo를 사용해 post prop이 바뀌지 않은 행은 다시 렌더링하지 않게 한다.
+const PostRow = memo(function PostRow({ post }) {
   return (
-    <tr className="align-middle border-bottom border-secondary-subtle post-row-hover">
-      <td className="text-center text-muted fw-semibold" style={{ width: '80px' }}>
-        {index}
-      </td>
-      <td>
-        <Link 
-          to={`/post/${post.id}`} 
-          className="text-decoration-none fw-bold text-light fs-5 post-title-link d-inline-flex align-items-center gap-2"
-        >
-          {post.title}
-          {post.comments && post.comments.length > 0 && (
-            <Badge pill bg="info" className="text-dark comment-badge">
-              {post.comments.length}
-            </Badge>
-          )}
-        </Link>
-      </td>
-      <td className="text-center text-secondary" style={{ width: '120px' }}>
-        {post.author}
-      </td>
-      <td className="text-center text-secondary-emphasis" style={{ width: '100px' }}>
-        {post.views}
-      </td>
-      <td className="text-center text-muted" style={{ width: '160px' }}>
-        <small>{post.createdAt.substring(0, 10)}</small>
-      </td>
-    </tr>
+    <article className="post-row">
+      <div>
+        <Link to={`/post/${post.id}`}>{post.title}</Link>
+        <p>{post.content}</p>
+      </div>
+      <div className="post-meta">
+        <span>{post.author}</span>
+        <span>{formatDate(post.createdAt)}</span>
+        <span>조회 {post.views}</span>
+      </div>
+    </article>
   );
 });
-
-PostRow.displayName = 'PostRow';
 
 export default PostRow;

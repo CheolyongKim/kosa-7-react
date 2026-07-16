@@ -1,56 +1,36 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
+import { BrowserRouter, Link, Route, Routes } from 'react-router-dom';
 import { BoardProvider } from './context/BoardContext';
-import PostList from './components/PostList';
 import PostDetail from './components/PostDetail';
 import PostForm from './components/PostForm';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import PostList from './components/PostList';
 import './App.css';
 
-function App() {
+export default function App() {
   return (
     <BoardProvider>
       <BrowserRouter>
-        <div className="app-container">
-          {/* GNB / Header */}
-          <header className="sticky-top py-3 mb-5 shadow-sm">
-            <Container className="d-flex justify-content-between align-items-center">
-              <a href="/" className="text-decoration-none d-flex align-items-center gap-2">
-                <span className="fs-3" style={{ cursor: 'pointer' }}>🚀</span>
-                <span className="fs-4 fw-extrabold text-gradient-indigo-cyan mb-0">Antigravity Board</span>
-              </a>
-              <span className="badge bg-dark border border-secondary text-secondary-emphasis px-3 py-2 rounded-pill fs-8">
-                React Review Assignment
-              </span>
-            </Container>
+        <div className="app-shell">
+          <header className="site-header">
+            <Link to="/" className="brand">일상 게시판</Link>
+            <nav>
+              <Link to="/">게시글</Link>
+              <Link to="/write" className="write-link">글쓰기</Link>
+            </nav>
           </header>
 
-          {/* Main Layout Container */}
-          <main className="main-content">
-            <Container>
-              <Routes>
-                <Route path="/" element={<PostList />} />
-                <Route path="/post/:id" element={<PostDetail />} />
-                <Route path="/write" element={<PostForm />} />
-                <Route path="/edit/:id" element={<PostForm />} />
-              </Routes>
-            </Container>
+          {/* React Router로 목록/상세/작성/수정 화면을 한 앱 안에서 전환한다. */}
+          <main>
+            <Routes>
+              <Route path="/" element={<PostList />} />
+              <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/write" element={<PostForm />} />
+              <Route path="/edit/:id" element={<PostForm />} />
+            </Routes>
           </main>
 
-          {/* Footer */}
-          <footer className="py-4 mt-auto text-center text-secondary border-top border-secondary-subtle">
-            <Container>
-              <p className="mb-1 small">© 2026 Antigravity Board. All rights reserved.</p>
-              <p className="small text-muted">
-                Powered by React, Bootstrap, React Router, useContext & useReducer.
-              </p>
-            </Container>
-          </footer>
+          <footer>JSONPlaceholder API · React 게시판</footer>
         </div>
       </BrowserRouter>
     </BoardProvider>
   );
 }
-
-export default App;

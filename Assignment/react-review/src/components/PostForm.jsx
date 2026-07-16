@@ -1,137 +1,104 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { BoardContext } from '../context/BoardContext';
-import { Form, Button } from 'react-bootstrap';
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useBoard } from '../hooks/useBoard';
 
-const PostForm = () => {
+export default function PostForm() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { posts, dispatch } = useContext(BoardContext);
+  const { posts, status, createPost, updatePost } = useBoard();
+  const existing = posts.find((post) => post.id === Number(id));
+  const [form, setForm] = useState({ title: '', author: '', content: '' });
+  const [saving, setSaving] = useState(false);
 
-  const isEditMode = !!id;
-  const postId = Number(id);
-
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [content, setContent] = useState('');
-
-  // 에디트 모드일 때 기존 데이터 로드 (useEffect)
+  // 수정 화면에서는 URL 파라미터의 id로 기존 게시글을 찾아 폼 초기값을 채운다.
   useEffect(() => {
-    if (isEditMode) {
-      const existingPost = posts.find((p) => p.id === postId);
-      if (existingPost) {
-        setTitle(existingPost.title);
-        setAuthor(existingPost.author);
-        setContent(existingPost.content);
-      } else {
-        alert('존재하지 않는 게시글입니다.');
-        navigate('/');
-      }
-    }
-  }, [isEditMode, postId, posts, navigate]);
-
-  // 글 저장 핸들러 (useCallback 활용)
-  const handleSubmit = useCallback((e) => {
-    e.preventDefault();
-    if (!title.trim() || !author.trim() || !content.trim()) {
-      alert('모든 필드를 입력해 주세요.');
-      return;
-    }
-
-    const now = new Date();
-    const formattedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    if (isEditMode) {
-      dispatch({
-        type: 'UPDATE_POST',
-        payload: {
-          id: postId,
-          title,
-          author,
-          content,
-          // 수정일은 생성일과 분리하여 관리할 수도 있으나, 여기서는 그냥 업데이트 항목만 반영
-        },
+    if (id && existing) {
+      setForm({
+        title: existing.title,
+        author: existing.author,
+        content: existing.content,
       });
-      navigate(`/post/${postId}`);
-    } else {
-      const newPost = {
-        id: Date.now(),
-        title,
-        author,
-        content,
-        views: 0,
-        createdAt: formattedDate,
-        comments: [],
-      };
-      dispatch({ type: 'CREATE_POST', payload: newPost });
-      navigate('/');
     }
-  }, [isEditMode, postId, title, author, content, dispatch, navigate]);
+  }, [id, existing]);
+
+  // name 속성을 활용해 title/author/content 입력값을 하나의 핸들러로 갱신한다.
+  const changeField = useCallback((event) => {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+  }, []);
+
+  const submit = useCallback(
+    async (event) => {
+      event.preventDefault();
+      if (!form.title.trim() || !form.author.trim() || !form.content.trim()) return;
+
+      setSaving(true);
+      try {
+        if (existing) {
+          await updatePost({ ...existing, ...form });
+          navigate(`/post/${existing.id}`);
+        } else {
+          const post = await createPost(form);
+          navigate(`/post/${post.id}`);
+        }
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [form, existing, createPost, updatePost, navigate],
+  );
+
+  if (id && status === 'loading') {
+    return <section className="panel status">게시글을 확인하는 중입니다.</section>;
+  }
+
+  if (id && !existing) {
+    return <section className="panel status">게시글을 찾을 수 없습니다.</section>;
+  }
 
   return (
-    <div className="glass-card p-4 rounded-4 shadow-lg mb-5 animate-fade-in">
-      <h2 className="fw-extrabold text-gradient-indigo-cyan mb-4">
-        {isEditMode ? '게시글 수정' : '새 게시글 작성'}
-      </h2>
+    <section className="panel form-panel">
+      <p className="eyebrow">{id ? 'EDIT POST' : 'NEW POST'}</p>
+      <h1>{id ? '게시글 수정' : '새 글 작성'}</h1>
 
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="mb-3" controlId="postAuthor">
-          <Form.Label className="text-light fw-semibold">작성자</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="작성자 이름을 입력하세요"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            disabled={isEditMode} // 수정 시 작성자명 변경 금지
-            className="bg-dark-subtle border-secondary text-light rounded-3 py-2 custom-placeholder"
-            required
+      <form onSubmit={submit}>
+        <label>
+          작성자
+          <input
+            name="author"
+            value={form.author}
+            onChange={changeField}
+            placeholder="이름을 입력하세요"
           />
-        </Form.Group>
-
-        <Form.Group className="mb-3" controlId="postTitle">
-          <Form.Label className="text-light fw-semibold">제목</Form.Label>
-          <Form.Control
-            type="text"
+        </label>
+        <label>
+          제목
+          <input
+            name="title"
+            value={form.title}
+            onChange={changeField}
             placeholder="제목을 입력하세요"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="bg-dark-subtle border-secondary text-light rounded-3 py-2 custom-placeholder"
-            required
           />
-        </Form.Group>
-
-        <Form.Group className="mb-4" controlId="postContent">
-          <Form.Label className="text-light fw-semibold">내용</Form.Label>
-          <Form.Control
-            as="textarea"
-            rows={10}
-            placeholder="내용을 입력하세요..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="bg-dark-subtle border-secondary text-light rounded-3 py-2 custom-placeholder"
-            style={{ resize: 'vertical' }}
-            required
+        </label>
+        <label>
+          내용
+          <textarea
+            name="content"
+            value={form.content}
+            onChange={changeField}
+            placeholder="내용을 입력하세요"
+            rows="10"
           />
-        </Form.Group>
+        </label>
 
-        <div className="d-flex justify-content-end gap-2">
-          <Button
-            variant="outline-light"
-            onClick={() => navigate(-1)}
-            className="rounded-pill px-4"
-          >
+        <div className="form-actions">
+          <button type="button" className="secondary" onClick={() => navigate(-1)}>
             취소
-          </Button>
-          <Button
-            type="submit"
-            className="btn-gradient border-0 px-4 fw-bold rounded-pill"
-          >
-            {isEditMode ? '수정 완료' : '등록'}
-          </Button>
+          </button>
+          <button disabled={saving}>{saving ? '저장 중...' : '저장하기'}</button>
         </div>
-      </Form>
-    </div>
+      </form>
+    </section>
   );
-};
-
-export default PostForm;
+}

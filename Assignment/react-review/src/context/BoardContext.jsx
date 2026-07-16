@@ -1,116 +1,128 @@
-import React, { createContext, useReducer, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import {
+  createRemotePost,
+  deleteRemotePost,
+  fetchPosts,
+  updateRemotePost,
+} from '../api/posts';
+import { BoardContext } from './BoardContextValue';
 
-// 초기 더미 데이터
-const initialPosts = [
-  {
-    id: 1,
-    title: '첫 번째 게시글입니다.',
-    content: '안녕하세요. 첫 번째 게시글 내용입니다. React, Bootstrap, Router를 활용하여 제작되었습니다.',
-    author: '홍길동',
-    views: 12,
-    createdAt: '2026-07-15 10:00',
-    comments: [
-      { id: 1, author: '이순신', text: '좋은 글이네요!', createdAt: '2026-07-15 10:15' }
-    ]
-  },
-  {
-    id: 2,
-    title: 'React의 Memoization 기술 공유',
-    content: 'React.memo, useMemo, useCallback을 활용하면 불필요한 렌더링을 줄여 성능을 극대화할 수 있습니다.',
-    author: '김철수',
-    views: 45,
-    createdAt: '2026-07-15 11:30',
-    comments: []
-  },
-  {
-    id: 3,
-    title: 'Vite와 Bootstrap을 사용한 UI 디자인',
-    content: 'Bootstrap과 사용자 정의 CSS 변수를 조합하여 현대적이고 세련된 Glassmorphism 테마를 구현할 수 있습니다.',
-    author: '박영희',
-    views: 29,
-    createdAt: '2026-07-15 12:45',
-    comments: []
-  }
-];
+const initialState = { posts: [], status: 'loading', error: null };
 
-const boardReducer = (state, action) => {
+// 게시판의 모든 상태 변경을 reducer에 모아두면
+// 추가/수정/삭제/댓글/조회수 로직이 컴포넌트 밖에서 일관되게 관리된다.
+function boardReducer(state, action) {
   switch (action.type) {
-    case 'LOAD_POSTS':
-      return action.payload;
-    case 'CREATE_POST': {
-      const newPosts = [action.payload, ...state];
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
-    case 'UPDATE_POST': {
-      const newPosts = state.map(post => 
-        post.id === action.payload.id ? { ...post, ...action.payload } : post
-      );
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
-    case 'DELETE_POST': {
-      const newPosts = state.filter(post => post.id !== action.payload);
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
-    case 'INCREMENT_VIEW': {
-      const newPosts = state.map(post => 
-        post.id === action.payload ? { ...post, views: post.views + 1 } : post
-      );
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
-    case 'ADD_COMMENT': {
-      const newPosts = state.map(post => {
-        if (post.id === action.payload.postId) {
-          return {
-            ...post,
-            comments: [...(post.comments || []), action.payload.comment]
-          };
-        }
-        return post;
-      });
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
-    case 'DELETE_COMMENT': {
-      const newPosts = state.map(post => {
-        if (post.id === action.payload.postId) {
-          return {
-            ...post,
-            comments: post.comments.filter(comment => comment.id !== action.payload.commentId)
-          };
-        }
-        return post;
-      });
-      localStorage.setItem('board_posts', JSON.stringify(newPosts));
-      return newPosts;
-    }
+    case 'LOAD_SUCCESS':
+      return { ...state, posts: action.posts, status: 'success', error: null };
+    case 'LOAD_ERROR':
+      return { ...state, status: 'error', error: action.error };
+    case 'ADD':
+      return { ...state, posts: [action.post, ...state.posts] };
+    case 'UPDATE':
+      return {
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === action.post.id ? { ...post, ...action.post } : post,
+        ),
+      };
+    case 'REMOVE':
+      return { ...state, posts: state.posts.filter((post) => post.id !== action.id) };
+    case 'VIEW':
+      return {
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === action.id ? { ...post, views: post.views + 1 } : post,
+        ),
+      };
+    case 'COMMENT_ADD':
+      return {
+        ...state,
+        posts: state.posts.map((post) =>
+          post.id === action.id
+            ? { ...post, comments: [...post.comments, action.comment] }
+            : post,
+        ),
+      };
     default:
       return state;
   }
-};
+}
 
-export const BoardContext = createContext(null);
+export function BoardProvider({ children }) {
+  const [state, dispatch] = useReducer(boardReducer, initialState);
 
-export const BoardProvider = ({ children }) => {
-  const [posts, dispatch] = useReducer(boardReducer, []);
-
-  // 초기화 시 로컬 스토리지 또는 더미 데이터 로드 (useEffect 활용)
-  useEffect(() => {
-    const saved = localStorage.getItem('board_posts');
-    if (saved) {
-      dispatch({ type: 'LOAD_POSTS', payload: JSON.parse(saved) });
-    } else {
-      dispatch({ type: 'LOAD_POSTS', payload: initialPosts });
-      localStorage.setItem('board_posts', JSON.stringify(initialPosts));
+  // useCallback으로 함수를 고정해 useEffect/useMemo의 의존성 변경을 줄인다.
+  const loadPosts = useCallback(async () => {
+    try {
+      dispatch({ type: 'LOAD_SUCCESS', posts: await fetchPosts() });
+    } catch (error) {
+      dispatch({ type: 'LOAD_ERROR', error: error.message });
     }
   }, []);
 
-  return (
-    <BoardContext.Provider value={{ posts, dispatch }}>
-      {children}
-    </BoardContext.Provider>
+  // 앱이 처음 렌더링될 때 JSONPlaceholder에서 게시글을 불러온다.
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
+  const createPost = useCallback(async ({ title, author, content }) => {
+    const remote = await createRemotePost({ title, content });
+    const post = {
+      id: remote.id ?? Date.now(),
+      title,
+      author,
+      content,
+      userId: remote.userId ?? 1,
+      views: 0,
+      createdAt: new Date().toISOString(),
+      comments: [],
+      isLocal: true,
+    };
+
+    dispatch({ type: 'ADD', post });
+    return post;
+  }, []);
+
+  const updatePost = useCallback(async (post) => {
+    // 사용자가 새로 작성한 글은 JSONPlaceholder에 실제로 존재하지 않으므로
+    // 원격 PUT 요청 없이 로컬 상태만 수정한다.
+    if (!post.isLocal) await updateRemotePost(post);
+    dispatch({ type: 'UPDATE', post });
+  }, []);
+
+  const removePost = useCallback(
+    async (id) => {
+      const target = state.posts.find((post) => post.id === id);
+      if (target && !target.isLocal) await deleteRemotePost(id);
+      dispatch({ type: 'REMOVE', id });
+    },
+    [state.posts],
   );
-};
+
+  const increaseViews = useCallback((id) => dispatch({ type: 'VIEW', id }), []);
+
+  const addComment = useCallback((id, author, text) => {
+    dispatch({
+      type: 'COMMENT_ADD',
+      id,
+      comment: { id: Date.now(), author, text, createdAt: new Date().toISOString() },
+    });
+  }, []);
+
+  // Provider value를 useMemo로 감싸면 Context 소비 컴포넌트의 불필요한 렌더를 줄일 수 있다.
+  const value = useMemo(
+    () => ({
+      ...state,
+      loadPosts,
+      createPost,
+      updatePost,
+      removePost,
+      increaseViews,
+      addComment,
+    }),
+    [state, loadPosts, createPost, updatePost, removePost, increaseViews, addComment],
+  );
+
+  return <BoardContext.Provider value={value}>{children}</BoardContext.Provider>;
+}
