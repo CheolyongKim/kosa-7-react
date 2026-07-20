@@ -1,4 +1,4 @@
-import client from "../api/client.js";
+import client from "../api/axios.js";
 
 const seed = [
   {
@@ -31,8 +31,22 @@ const seed = [
 
 const storageKey = "react-board-demo-data";
 
-const getLocalBoards = () =>
-  JSON.parse(localStorage.getItem(storageKey) ?? JSON.stringify(seed));
+// 페이지 이동을 바로 확인할 수 있도록 fallback 모드에서 넉넉한 목록을 제공한다.
+const paginationFixtures = Array.from({ length: 37 }, (_, index) => ({
+  id: index + 4,
+  title: `테스트 게시글 ${index + 4} - 아무 말 대잔치 ${["React", "CSS", "API", "팀워크"][index % 4]}`,
+  writer: ["김더미", "이테스트", "박샘플", "최페이지"][index % 4],
+  viewCount: 10 + ((index * 17) % 240),
+  createdAt: `2026-07-${String(17 - (index % 17)).padStart(2, "0")}`,
+  content: "페이지네이션 동작을 확인하기 위한 더미 게시글입니다. 특별한 내용은 없고, 목록이 여러 페이지로 나뉘는지 확인하는 용도로만 사용합니다.",
+}));
+
+const getLocalBoards = () => {
+  const stored = localStorage.getItem(storageKey);
+  if (!stored) return [...seed, ...paginationFixtures];
+  const boards = JSON.parse(stored);
+  return boards.length < 10 ? [...boards, ...paginationFixtures] : boards;
+};
 
 const saveLocalBoards = (boards) =>
   localStorage.setItem(storageKey, JSON.stringify(boards));
