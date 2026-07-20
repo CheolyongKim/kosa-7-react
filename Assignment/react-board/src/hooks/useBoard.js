@@ -10,14 +10,14 @@ import * as boardService from "../services/boardService.js";
 // queryKey를 한 곳에서 관리하면 목록과 상세 캐시가 서로 충돌하지 않는다.
 export const boardKeys = {
   all: ["boards"],
-  list: (params) => ["boards", params],
+  list: () => ["boards", "list"],
   detail: (id) => ["boards", "detail", id],
 };
 
-export const useBoards = (params) =>
+export const useBoards = () =>
   useQuery({
-    queryKey: boardKeys.list(params),
-    queryFn: () => boardService.getBoards(params),
+    queryKey: boardKeys.list(),
+    queryFn: boardService.getBoards,
     placeholderData: keepPreviousData,
   });
 

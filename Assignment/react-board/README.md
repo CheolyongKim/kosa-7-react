@@ -9,7 +9,7 @@ pnpm install
 pnpm dev
 ```
 
-기본 API 주소는 `http://localhost:8080/api`입니다. 배포 또는 다른 서버에서는 `.env`에 `VITE_API_BASE_URL=https://example.com/api`를 설정합니다.
+개발 서버는 `/api` 요청을 `http://192.168.2.196:8080`으로 프록시해 CORS 문제 없이 연결합니다. 다른 서버를 쓰려면 `vite.config.js`의 `target`을 바꿉니다. 배포 환경에서 프런트와 API 도메인이 다르면 백엔드 CORS 설정 또는 `VITE_API_BASE_URL` 설정이 필요합니다.
 
 ## 설계 판단 근거
 
@@ -24,10 +24,10 @@ pnpm dev
 
 ## Spring Boot API 계약
 
-- `GET /boards?page=0&size=8&keyword=`: `{ content, number, totalPages, totalElements }`
+- `GET /boards`: `BoardSummaryResponse[]` 배열
 - `GET /boards/{id}`
 - `POST /boards`: `{ title, writer, content }`
-- `PUT /boards/{id}`: `{ title, writer, content }`
+- `PUT /boards/{id}`: `{ title, content }` (`writer`는 수정 불가)
 - `DELETE /boards/{id}`
 
 프런트 개발 서버(`http://localhost:5173`)에서 연결하려면 Spring Boot에 `/api/**` 대상 CORS 설정이 필요합니다.
