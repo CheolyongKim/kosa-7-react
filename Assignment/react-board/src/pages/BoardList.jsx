@@ -1,10 +1,21 @@
-import { useDeferredValue, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useBoards } from '../hooks/useBoard.js'
+import { useDeferredValue, useState } from "react";
+import { Link } from "react-router-dom";
+import { useBoards } from "../hooks/useBoard.js";
 
+const tags = ["UX", "Code", "Launch", "Strategy"];
 export default function BoardList() {
-  const [keyword, setKeyword] = useState(''); const [page, setPage] = useState(0); const deferredKeyword = useDeferredValue(keyword)
-  const { data, isLoading, isFetching, isError, error } = useBoards({ page, size: 8, keyword: deferredKeyword })
-  const search = (event) => { setKeyword(event.target.value); setPage(0) }
-  return <div className="surface p-3 p-md-4"><div className="d-flex flex-wrap gap-3 justify-content-between align-items-end mb-4"><div><p className="eyebrow mb-1">Community</p><h1 className="page-title">게시글</h1></div><Link className="btn btn-primary" to="/boards/write">새 글 작성</Link></div><div className="position-relative mb-3"><input className="form-control" value={keyword} onChange={search} placeholder="제목으로 검색" aria-label="게시글 검색" />{isFetching && <span className="position-absolute end-0 top-50 translate-middle-y me-3 small text-secondary">검색 중</span>}</div>{isError ? <div className="alert alert-danger mb-0">목록을 불러오지 못했습니다: {error.message}</div> : <><div className="table-responsive"><table className="table table-hover mb-0"><thead><tr className="small text-secondary"><th>번호</th><th>제목</th><th>작성자</th><th>조회</th><th>등록일</th></tr></thead><tbody>{isLoading ? <tr><td colSpan="5" className="text-center py-5 text-secondary">게시글을 불러오는 중입니다…</td></tr> : data.content.length ? data.content.map((board) => <tr key={board.id}><td className="text-secondary">{board.id}</td><td><Link className="board-title" to={`/boards/${board.id}`}>{board.title}</Link></td><td>{board.writer}</td><td>{board.viewCount}</td><td className="text-secondary">{board.createdAt?.slice(0, 10)}</td></tr>) : <tr><td colSpan="5" className="text-center py-5 text-secondary">검색 결과가 없습니다.</td></tr>}</tbody></table></div><nav className="d-flex justify-content-center gap-2 mt-4" aria-label="페이지 이동"><button className="btn btn-outline-secondary btn-sm" disabled={page === 0} onClick={() => setPage((value) => value - 1)}>이전</button><span className="align-self-center small text-secondary">{page + 1} / {data?.totalPages ?? 1}</span><button className="btn btn-outline-secondary btn-sm" disabled={!data || page + 1 >= data.totalPages} onClick={() => setPage((value) => value + 1)}>다음</button></nav></>}</div>
+  const [keyword, setKeyword] = useState("");
+  const [page, setPage] = useState(0);
+  const deferredKeyword = useDeferredValue(keyword);
+  const { data, isLoading, isFetching, isError } = useBoards({ page, size: 8, keyword: deferredKeyword });
+  return <div className="board-layout">
+    <section className="discussion-panel">
+      <div className="board-heading"><div><p className="kicker">COMMUNITY DISCUSSIONS</p><h1>최신 토론</h1></div><Link className="button button-primary" to="/boards/write">새 토픽 작성</Link></div>
+      <label className="search-box"><span>⌕</span><input value={keyword} onChange={(e) => { setKeyword(e.target.value); setPage(0); }} placeholder="토픽 제목으로 검색" aria-label="게시글 검색" />{isFetching && <em>검색 중</em>}</label>
+      {isError ? <div className="state-card error">목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div> :
+        <div className="post-list">{isLoading ? <div className="state-card">토론을 불러오는 중입니다…</div> : data.content.length ? data.content.map((board) => <Link className="post-card" key={board.id} to={`/boards/${board.id}`}><div><h2>{board.title}</h2><p>by <b>{board.writer}</b><span>·</span>{board.createdAt?.slice(0, 10)}<span>·</span><strong>토론</strong><span>·</span>{board.viewCount} views</p></div><span className="post-arrow">→</span></Link>) : <div className="state-card">검색 결과가 없습니다.</div>}</div>}
+      <div className="pager"><button className="button button-ghost" disabled={page === 0} onClick={() => setPage((v) => v - 1)}>이전</button><span>{page + 1} / {data?.totalPages ?? 1}</span><button className="button button-ghost" disabled={!data || page + 1 >= data.totalPages} onClick={() => setPage((v) => v + 1)}>다음</button></div>
+    </section>
+    <aside className="topic-sidebar"><p className="sidebar-label">POPULAR CATEGORIES</p>{["일반", "제품", "개발", "마케팅", "피드백"].map((category, i) => <div className="category" key={category}><span>{["♧", "●", "◢", "✦", "□"][i]}</span>{category}</div>)}<p className="sidebar-label tag-label">TRENDING TAGS</p><div className="tag-list">{tags.map((tag) => <span key={tag}>{tag}</span>)}</div><Link className="button button-primary sidebar-button" to="/boards/write">새 토픽 작성</Link></aside>
+  </div>;
 }
