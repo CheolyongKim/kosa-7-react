@@ -1,0 +1,9 @@
+import axios from "axios";
+
+const authClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "/api",
+  timeout: 5_000,
+  headers: { "Content-Type": "application/json" },
+});
+
+export default authClient;

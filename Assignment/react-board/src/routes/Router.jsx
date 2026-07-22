@@ -1,23 +1,27 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Layout from "../components/Layout.jsx";
-import Home from "../pages/Home.jsx";
-import Login from "../pages/Login.jsx";
+import Landing from "../pages/Landing.jsx";
+import Login from "../pages/LoginV2.jsx";
+import Register from "../pages/Register.jsx";
+import Account from "../pages/Account.jsx";
 import BoardList from "../pages/BoardList.jsx";
-import BoardWrite from "../pages/BoardWrite.jsx";
-import BoardDetail from "../pages/BoardDetail.jsx";
-import BoardUpdate from "../pages/BoardUpdate.jsx";
+import BoardFormV2 from "../pages/BoardFormV2.jsx";
+import BoardDetailV2 from "../pages/BoardDetailV2.jsx";
+import ProtectedRoute from "../components/ProtectedRoute.jsx";
 
 export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/boards" element={<BoardList />} />
-          <Route path="/boards/write" element={<BoardWrite />} />
-          <Route path="/boards/:id" element={<BoardDetail />} />
-          <Route path="/boards/:id/edit" element={<BoardUpdate />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Account />} />
+          <Route path="/boards" element={<ProtectedRoute><BoardList /></ProtectedRoute>} />
+          <Route path="/boards/write" element={<ProtectedRoute><BoardFormV2 /></ProtectedRoute>} />
+          <Route path="/boards/:id" element={<ProtectedRoute><BoardDetailV2 /></ProtectedRoute>} />
+          <Route path="/boards/:id/edit" element={<ProtectedRoute><BoardFormV2 /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

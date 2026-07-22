@@ -12,6 +12,6 @@ export default function Header() {
   return <header className="site-header"><div className="site-header-inner">
     <NavLink to="/" className="brand"><span className="brand-mark">◉</span> ARCHIVE <i>/</i> BOARD</NavLink>
     <nav className="top-nav" aria-label="Main navigation">{links.map((link) => <NavLink end={link.to === "/"} key={link.to} to={link.to}>{link.label}</NavLink>)}</nav>
-    <div className="user-actions">{user ? <><span className="user-name">{user.name}</span><button className="text-button" onClick={handleLogout}>Log out</button></> : <NavLink className="login-link" to="/login">Log in</NavLink>}</div>
+    <div className="user-actions">{user ? <><NavLink className="user-name profile-link" to="/profile">{user.name}</NavLink><button className="text-button" onClick={handleLogout}>Log out</button></> : <NavLink className="login-link" to="/login">Log in</NavLink>}</div>
   </div></header>;
 }

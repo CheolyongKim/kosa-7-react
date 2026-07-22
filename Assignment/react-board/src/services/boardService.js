@@ -13,15 +13,14 @@ export async function getBoard(id) {
   const response = await client.get(`/boards/${id}`);
   return normalizeBoard(response.data);
 }
-export async function createBoard({ title, content, writer }) {
-  const response = await client.post("/boards", { title, content, writer });
+export async function createBoard({ title, content }) {
+  const response = await client.post("/boards", { title, content });
   return normalizeBoard(response.data);
 }
 export async function updateBoard({ id, boardData }) {
   const response = await client.put(`/boards/${id}`, {
     title: boardData.title,
     content: boardData.content,
-    writer: boardData.writer,
   });
   return normalizeBoard(response.data);
 }

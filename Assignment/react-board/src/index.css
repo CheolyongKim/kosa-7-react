@@ -543,6 +543,22 @@ a {
   max-width: 520px;
   margin-top: 30px;
 }
+.auth-switch { margin-top: 24px !important; text-align: center; font-size: 15px !important; }
+.auth-switch a, .profile-link { color: #9a3a0a; text-decoration: underline; text-underline-offset: 3px; }
+.profile-card { background: #fcfbfa; border-radius: 40px; padding: clamp(28px, 5vw, 64px); max-width: 700px; margin: 30px auto 0; box-shadow: 0 24px 48px rgba(0, 0, 0, 0.05); }
+.profile-card h1 { font-size: clamp(34px, 4vw, 48px); font-weight: 500; letter-spacing: -0.04em; margin: 0; }
+.profile-card > p { color: #696969; font-size: 16px; line-height: 1.5; }
+.profile-summary { display: grid; grid-template-columns: 110px 1fr; gap: 14px 22px; padding: 28px 0; margin: 28px 0 18px; border-top: 1px solid #d1cdc7; border-bottom: 1px solid #d1cdc7; }
+.profile-summary span { color: #696969; font-size: 14px; }
+.profile-summary strong { font-weight: 500; }
+.profile-state { padding: 12px 0; }
+.token-info { white-space: pre-wrap; overflow-wrap: anywhere; background: #f3f0ee; border-radius: 20px; padding: 20px; color: #262627; font-family: inherit; font-size: 14px; line-height: 1.6; margin: 22px 0; }
+.comments { border-top: 1px solid #d1cdc7; margin-top: 48px; padding-top: 40px; }
+.comments h2 { font-size: 27px; font-weight: 500; letter-spacing: -0.03em; margin: 0 0 22px; }
+.comment-form textarea, .comment-edit textarea { width: 100%; border: 1px solid #d1cdc7; border-radius: 20px; padding: 14px 17px; resize: vertical; background: #fff; color: #141413; margin-bottom: 10px; }
+.comment-list { display: grid; gap: 12px; margin-top: 28px; }
+.comment { padding: 20px 0; border-bottom: 1px solid #d1cdc7; }
+.comment header { display: flex; gap: 12px; align-items: baseline; }.comment header span { color: #696969; font-size: 13px; }.comment p { white-space: pre-wrap; line-height: 1.55; margin: 12px 0; }.comment-actions { display: flex; gap: 12px; }.comment-actions button { border: 0; background: transparent; padding: 0; color: #9a3a0a; font-size: 14px; }.comment-edit { display: flex; flex-wrap: wrap; gap: 8px; }.comment-edit textarea { flex-basis: 100%; }.comment-login { color: #696969; }
 .full-width {
   width: 100%;
   margin-top: 26px;
@@ -685,7 +701,8 @@ a {
   }
   .article-card,
   .editor-card,
-  .login-card {
+  .login-card,
+  .profile-card {
     border-radius: 28px;
     padding: 28px 22px;
   }
